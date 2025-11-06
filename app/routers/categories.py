@@ -41,7 +41,7 @@ async def create_category(category: CategoryCreate, db: Session = Depends(get_db
     db.refresh(db_category)
     return db_category
 
-@router.put("/{category_id}")
+@router.put("/{category_id}", response_model=CategorySchema, status_code=status.HTTP_200_OK)
 async def update_category(category_id: int, category: CategoryCreate ,db: Session = Depends(get_db)):
     """
     Обновляет категорию по её ID.
