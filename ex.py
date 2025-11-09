@@ -1,39 +1,27 @@
-from decimal import Decimal
+def solve():
+    n = int(input())
+    a, b, c = map(int, input().split())
 
-from sqlalchemy import String, ForeignKey, Text, Numeric, DateTime, Date
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from datetime import datetime, date
+    # Создаем массив для отслеживания достижимых сумм
+    dp = [False] * (n + 1)
 
-class Base(DeclarativeBase):
-    pass
+    # Изначально у нас есть 1 рубль
+    dp[1] = True
 
-class Project(Base):
-    __tablename__ = 'projects'
+    # Перебираем все суммы от 1 до n
+    for i in range(1, n + 1):
+        if dp[i]:
+            # Если текущую сумму можно набрать, то можно добавить монеты
+            if i + a <= n:
+                dp[i + a] = True
+            if i + b <= n:
+                dp[i + b] = True
+            if i + c <= n:
+                dp[i + c] = True
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(150))
-    start_date: Mapped[date] = mapped_column(Date, default=date.today)
+    # Считаем количество достижимых сумм
+    result = sum(1 for i in range(1, n + 1) if dp[i])
+    return result
 
-    employees: Mapped[list["Employee"]] = relationship(
-        "Employee",
-        back_populates="projects",
-        secondary="participations",)
 
-class Employee(Base):
-    __tablename__ = 'employees'
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100))
-    email: Mapped[str] = mapped_column(String(120), unique=True)
-
-    projects: Mapped[list["Project"]] = relationship(
-        back_populates="employees",
-        secondary="participations",
-    )
-
-class Participation(Base):
-    __tablename__ = 'participations'
-
-    project_id: Mapped[int] = mapped_column(ForeignKey('projects.id'), primary_key=True)
-    employee_id: Mapped[int] = mapped_column(ForeignKey('employees.id'), primary_key=True)
-    role: Mapped[str] = mapped_column(String(50))
+print(solve())

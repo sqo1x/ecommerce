@@ -1,5 +1,3 @@
-from urllib.request import ProxyDigestAuthHandler
-
 from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select, update
@@ -46,7 +44,8 @@ async def get_products_by_category(category_id: int, db: Session = Depends(get_d
     """
     Возвращает список товаров в указанной категории по её ID.
     """
-    category_stmt = select(CategoryModel).where(CategoryModel.id == category_id)
+    category_stmt = select(CategoryModel).where(CategoryModel.id == category_id,
+                                                CategoryModel.is_active==True)
     category_result = db.scalar(category_stmt)
     if category_result is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Category not found")
@@ -101,7 +100,8 @@ async def delete_product(product_id: int, db: Session = Depends(get_db)):
     """
     Удаляет товар по его ID.
     """
-    stmt = select(ProductModel).where(ProductModel.is_active==True,)
+    stmt = select(ProductModel).where(ProductModel.is_active==True,
+                                      ProductModel.id == product_id)
     product_result = db.scalar(stmt)
     if product_result is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Product not found")
