@@ -1,27 +1,34 @@
-def solve():
-    n = int(input())
-    a, b, c = map(int, input().split())
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update
 
-    # Создаем массив для отслеживания достижимых сумм
-    dp = [False] * (n + 1)
-
-    # Изначально у нас есть 1 рубль
-    dp[1] = True
-
-    # Перебираем все суммы от 1 до n
-    for i in range(1, n + 1):
-        if dp[i]:
-            # Если текущую сумму можно набрать, то можно добавить монеты
-            if i + a <= n:
-                dp[i + a] = True
-            if i + b <= n:
-                dp[i + b] = True
-            if i + c <= n:
-                dp[i + c] = True
-
-    # Считаем количество достижимых сумм
-    result = sum(1 for i in range(1, n + 1) if dp[i])
-    return result
+from database import get_async_db
+from app.models.task import TaskModel
+from app.models.project import ProjectModel
+from app.schemas.task import TaskUpdate, TaskSchema
 
 
-print(solve())
+router = APIRouter()
+
+@router.put("/{task_id}", response_model=TaskSchema)
+async def update_task(task: TaskUpdate, task_id: int, db: AsyncSession = Depends(get_async_db)):
+    db_task = await db.scalar(select(TaskModel).where(TaskModel.id == task_id,
+                                                      TaskModel.is_active == True))
+    if not db_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    db_project = await db.scalar(select(ProjectModel).where(ProjectModel.id == task.project_id,
+                                                            ProjectModel.is_active == True))
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    await db.execute(
+        update(TaskModel)
+        .where(TaskModel.id == task_id)
+        .values(**task.model_dump())
+
+    )
+    await db.commit()
+    await db.refresh(db_task)
+
+    return db_task
