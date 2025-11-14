@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from decimal import Decimal
+from datetime import datetime
+
 
 """
 Основная концепция разделения классов для создания pydantic-моделей:
@@ -63,7 +65,7 @@ class Product(BaseModel):
 class UserCreate(BaseModel):
     email: EmailStr = Field(description="Email пользователя")
     password: str = Field(min_length=8, description="Пароль (минимум 8 символов)")
-    role: str = Field(default="buyer", pattern="^(buyer|seller)$", description="Роль: 'buyer' или 'seller'")
+    role: str = Field(default="buyer", pattern="^(buyer|seller|admin)$", description="Роль: 'buyer' или 'seller'")
 
 
 class User(BaseModel):
@@ -71,4 +73,28 @@ class User(BaseModel):
     email: EmailStr
     is_active: bool
     role: str
+    model_config = ConfigDict(from_attributes=True)
+
+class ReviewCreate(BaseModel):
+    """
+    Модель для создания отзыва от пользователя.
+    Будет использоваться при POST/PUT запросах.
+    """
+    product_id: int = Field(description='ID продукта, которому оставляют отзыв')
+    comment: str = Field(description='Отзыв пользователя')
+    grade: int = Field(ge=1, le=5, description='Оценка от 1 до 5')
+
+class Review(BaseModel):
+    """
+    Модель для ответа клиенту.
+    Будет использоваться, например, в GET запросах.
+    """
+    id: int = Field(description='Идентификатор отзыва')
+    user_id: int = Field(description="Идентификатор пользователя")
+    product_id: int = Field(description="Идентификатор продукта")
+    comment: str = Field(description="Отзыв пользователя")
+    comment_date: datetime = Field(description="Дата создания отзыва")
+    grade: int = Field("Оценка продукта от 1 до 5")
+    is_active: bool = Field(description="Активность отзыва")
+
     model_config = ConfigDict(from_attributes=True)

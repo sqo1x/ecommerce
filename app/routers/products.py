@@ -1,13 +1,14 @@
 from fastapi import APIRouter, status, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db_depends import get_db, get_async_db
+from app.db_depends import get_async_db
 from app.schemas import Product as ProductSchema, ProductCreate
 from app.models import Category as CategoryModel, Product as ProductModel
 from app.models import User as UserModel
 from app.auth import get_current_seller
+from app.schemas import Review as ReviewSchema, ReviewCreate
+from app.models import Review as ReviewModel
 
 # Создаём маршрутизатор для товаров
 router = APIRouter(
@@ -128,3 +129,18 @@ async def delete_product(
     await db.commit()
     await db.refresh(product)  # Для возврата is_active = False
     return product
+
+@router.get("/{product_id}/reviews", response_model=list[ReviewSchema])
+async def get_reviews_for_products(product_id: int, db: AsyncSession = Depends(get_async_db)):
+    """
+    Возвращает все отзывы о товаре по ID товара.
+    """
+    db_product = await db.scalar(select(ProductModel).where(ProductModel.is_active == True,
+                                                               ProductModel.id == product_id))
+    if not db_product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    result = await db.scalars(select(ReviewModel).where(ReviewModel.is_active == True,
+                                                        ReviewModel.product_id == product_id))
+
+    return result.all()

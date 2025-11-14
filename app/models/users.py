@@ -17,3 +17,6 @@ class User(Base):
         "Product",
         back_populates="seller"
     )
+    reviews: Mapped[list["Review"]] = relationship(
+        back_populates="user",
+    )

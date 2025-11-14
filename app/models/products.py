@@ -18,9 +18,16 @@ class Product(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)  # New
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    rating: Mapped[float] = mapped_column(default=0.0, server_default='0')
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    category: Mapped["Category"] = relationship(back_populates="products")  # New
+    category: Mapped["Category"] = relationship(
+        back_populates="products"
+    )  # New
     seller: Mapped["User"] = relationship(
         "User",
         back_populates="products",
+    )
+    reviews: Mapped[list["Review"]] = relationship(
+        back_populates="product",
     )
